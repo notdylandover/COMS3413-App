@@ -11,12 +11,18 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(null);
+    const [userData, setUserData] = useState({ firstName: '', lastName: '' });
 
     useEffect(() => {
         const checkLoginStatus = async () => {
             try {
                 const token = await AsyncStorage.getItem('token');
                 setIsLoggedIn(!!token);
+                if (token) {
+                    const firstName = await AsyncStorage.getItem('firstName');
+                    const lastName = await AsyncStorage.getItem('lastName');
+                    setUserData({ firstName, lastName });
+                }
             } catch (error) {
                 console.error('Error fetching token:', error);
                 setIsLoggedIn(false);
@@ -25,6 +31,10 @@ export default function App() {
 
         checkLoginStatus();
     }, []);
+
+    const handleUserUpdate = (firstName, lastName) => {
+        setUserData({ firstName, lastName });
+    };
 
     if (isLoggedIn === null) {
         return null; 
@@ -36,9 +46,11 @@ export default function App() {
                 {isLoggedIn ? (
                     <>
                         <Stack.Screen name="Welcome" options={{ headerShown: false }}>
-                            {props => <WelcomeScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
+                            {props => <WelcomeScreen {...props} userData={userData} setIsLoggedIn={setIsLoggedIn} />}
                         </Stack.Screen>
-                        <Stack.Screen name="Profile" component={ProfileScreen} />
+                        <Stack.Screen name="Profile">
+                            {props => <ProfileScreen {...props} userData={userData} onUserUpdate={handleUserUpdate} />}
+                        </Stack.Screen>
                     </>
                 ) : (
                     <Stack.Screen name="Login" options={{ headerShown: false }}>

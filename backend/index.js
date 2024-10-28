@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     firstname: { type: String },
     lastname: { type: String },
+    profileImage: { type: String },
 });
 
 const User = mongoose.model('User', userSchema);
@@ -92,6 +93,29 @@ app.get('/user', async (req, res) => {
         res.json(user);
     } catch (error) {
         res.status(403).json({ message: 'Invalid token' });
+    }
+});
+
+app.put('/update-profile', async (req, res) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Unauthorized' });
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const { firstName, lastName, profileImage } = req.body;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            decoded.id,
+            { firstname: firstName, lastname: lastName, profileImage },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+
+        res.json({ message: 'Profile updated successfully', user: updatedUser });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ message: 'Failed to update profile' });
     }
 });
 
